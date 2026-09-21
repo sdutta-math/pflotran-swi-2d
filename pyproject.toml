@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pflotran-swi"
+version = "0.1.0"
+description = "Property-based PFLOTRAN model generation for 2D seawater intrusion simulation (Norfolk, VA)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "pandas>=2.2",
+    "h5py>=3.11",
+    "pint>=0.24",
+    "gstools>=1.6",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pflotran_swi"]
+exclude = ["src/pflotran_swi/tests"]
