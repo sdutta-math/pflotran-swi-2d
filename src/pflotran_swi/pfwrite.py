@@ -1,10 +1,10 @@
-from model.norfolk_model import NorfolkModel
+from pflotran_swi.norfolk_model import NorfolkModel
 import pandas as pd 
 import h5py 
 import pint
 import numpy as np  
 import os
-from model.units import ureg
+from pflotran_swi.units import ureg
 import glob 
 import warnings
 import shutil 

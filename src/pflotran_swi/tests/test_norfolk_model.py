@@ -1,12 +1,3 @@
-from pathlib import Path 
-
-ROOT = Path(__file__).parent.parent.parent.parent
-SRC = ROOT / "src" 
-WORK = ROOT / "work"
-
-import sys
-sys.path.append(str(SRC))
-
 import os
 import h5py
 import numpy as np
@@ -14,7 +5,7 @@ import pytest
 import pathlib
 import pint
 
-from model.norfolk_model import NorfolkModel, ureg
+from pflotran_swi.norfolk_model import NorfolkModel, ureg
 import signal
 import threading
 import time
@@ -67,7 +58,7 @@ def test_id_to_nz():
 
 def test_elevation_to_nz(monkeypatch):
 
-    monkeypatch.setattr("model.norfolk_model.NorfolkModel.__setattr__", object.__setattr__)
+    monkeypatch.setattr("pflotran_swi.norfolk_model.NorfolkModel.__setattr__", object.__setattr__)
 
     model = NorfolkModel()
     test_elevations = [5.0, -15.0, -15 + 0.01, -15 + 0.1, -15 + 0.11, -1] * ureg.meter
@@ -152,7 +143,7 @@ def test_slope_pressure(test_data):
  
 def test_region_slope(monkeypatch):
 
-    monkeypatch.setattr("model.norfolk_model.NorfolkModel.__setattr__", object.__setattr__)
+    monkeypatch.setattr("pflotran_swi.norfolk_model.NorfolkModel.__setattr__", object.__setattr__)
     
     top_profile = np.linspace(5, 0.0, 8) * ureg.meter
     ocean_profile = np.linspace(-5.0, -6.0, 2) * ureg.meter
@@ -167,7 +158,7 @@ def test_region_slope(monkeypatch):
 
 def test_subsurface_mask(monkeypatch):
 
-    monkeypatch.setattr("model.norfolk_model.NorfolkModel.__setattr__", object.__setattr__)
+    monkeypatch.setattr("pflotran_swi.norfolk_model.NorfolkModel.__setattr__", object.__setattr__)
 
     land_profile = np.linspace(5, -10, 2) * ureg.meter
     ocean_profile = np.linspace(-10, -5, 2) * ureg.meter

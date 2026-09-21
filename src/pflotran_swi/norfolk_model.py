@@ -1,6 +1,6 @@
 import pint
 import numpy as np  
-from model.units import ureg
+from pflotran_swi.units import ureg
 
 class NorfolkModel:
     """

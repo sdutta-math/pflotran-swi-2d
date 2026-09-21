@@ -4,9 +4,9 @@ import scipy.stats as stats
 import numpy as np
 import datetime as date 
 import copy 
-from model.units import ureg
+from pflotran_swi.units import ureg
 
-from model.norfolk_model import NorfolkModel
+from pflotran_swi.norfolk_model import NorfolkModel
 
 class NorfolkEnsemble: 
 
