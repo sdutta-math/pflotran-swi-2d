@@ -5,8 +5,9 @@ build-backend = "hatchling.build"
 [project]
 name = "pflotran-swi"
 version = "0.1.0"
-description = "Property-based PFLOTRAN model generation for 2D seawater intrusion simulation (Norfolk, VA)"
+description = "Property-based PFLOTRAN model generation for 2D seawater intrusion simulation"
 readme = "README.md"
+license = "BSD-3-Clause"
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.0",

@@ -15,4 +15,9 @@ pytest src/pflotran_swi/tests
 ```
 
 ## License
-TBD — pending a compatibility check against PFLOTRAN's own license. No LICENSE file yet; do not treat this repo as licensed for reuse until one is added.
+BSD 3-Clause — see [LICENSE](LICENSE).
+
+This repo only generates PFLOTRAN input decks (text/HDF5 files); it does not
+link against or redistribute PFLOTRAN itself, so it isn't bound by PFLOTRAN's
+own LGPLv3 license. PFLOTRAN is a separate, independently-installed
+dependency you run against the generated decks.
