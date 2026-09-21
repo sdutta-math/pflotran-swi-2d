@@ -1,13 +1,22 @@
 from pflotran_swi.norfolk_model import NorfolkModel
-import pandas as pd 
-import h5py 
+import pandas as pd
+import h5py
 import pint
-import numpy as np  
+import numpy as np
 import os
 from pflotran_swi.units import ureg
-import glob 
+import glob
 import warnings
-import shutil 
+import shutil
+import importlib.resources
+
+def _default_ctrl_dir(name: str) -> str:
+    """Bundled Norfolk-example PFLOTRAN control deck templates (spinup/post).
+
+    Not tied to any particular simulation - callers running their own SWI
+    scenario should pass their own ctrl_dir to write_spinup_run/write_post_run.
+    """
+    return str(importlib.resources.files("pflotran_swi") / "pfctrl" / name)
 
 def _create_gridded_dataset(data, outfilename, group_name, dimension, discretization,
                            origin = [0.,0.], max_buffer_size = [4],
@@ -58,7 +67,7 @@ def _write_pf_cell_indexed_dataset(cell_ids, ds_names, data_list, outfilename = 
 
 # Bridge from NorfolkModels to PFLOTRAN input files
 
-def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/"):
+def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_dir: str = None):
     if not os.path.exists(spinup_dir):
         os.makedirs(spinup_dir)
     elif os.listdir(spinup_dir):
@@ -151,13 +160,14 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/"):
             f.write("  /\n")
             f.write("END\n")
 
-    ctrl_dir = "pfctrl/spinup"
+    if ctrl_dir is None:
+        ctrl_dir = _default_ctrl_dir("spinup")
     files_to_copy = glob.glob(os.path.join(ctrl_dir, '*'))
     for file_path in files_to_copy:
         if os.path.isfile(file_path):
             shutil.copy(file_path, spinup_dir)
 
-def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir: str = "./spinup/"):
+def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir: str = "./spinup/", ctrl_dir: str = None):
     # Create a symbolic link to the spinup strata file in the postrun directory
     if not os.path.exists(post_dir):
         os.makedirs(post_dir)
@@ -266,7 +276,8 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
             f.write("  /\n")
             f.write("END\n")
 
-    ctrl_dir = "pfctrl/post"
+    if ctrl_dir is None:
+        ctrl_dir = _default_ctrl_dir("post")
     files_to_copy = glob.glob(os.path.join(ctrl_dir, '*'))
     for file_path in files_to_copy:
         if os.path.isfile(file_path):
@@ -275,7 +286,7 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
 
     # Well stuff here
 
-def write(model: NorfolkModel, dir): 
-    write_spinup_run(model, spinup_dir = dir + "/spinup/")
-    write_post_run(model, post_dir = dir + "/postrun/", spinup_dir = dir + "/spinup/")
+def write(model: NorfolkModel, dir, spinup_ctrl_dir: str = None, post_ctrl_dir: str = None):
+    write_spinup_run(model, spinup_dir = dir + "/spinup/", ctrl_dir = spinup_ctrl_dir)
+    write_post_run(model, post_dir = dir + "/postrun/", spinup_dir = dir + "/spinup/", ctrl_dir = post_ctrl_dir)
 
