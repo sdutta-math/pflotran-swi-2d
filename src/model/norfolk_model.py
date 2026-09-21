@@ -71,7 +71,7 @@ class NorfolkModel:
         self.SPINUP_AIR_PRESSURE_AT_SEA_LEVEL = kwargs.get("SPINUP_AIR_PRESSURE_AT_SEA_LEVEL", 101325 * ureg.pascal)
         self.SPINUP_SALINITY =                  kwargs.get("SPINUP_SALINITY", 35 / 58.442469 * ureg.gram / ureg.kilogram)
         self.sea_level_anomaly_rate =           kwargs.get("sea_level_anomaly_rate", 1.0/100 * ureg.meter / ureg.year)
-        self.annual_air_pressure_at_sea_level = kwargs.get("annual_air_pressure_at_sea_level", np.full(12, 101325) * ureg.bar)
+        self.annual_air_pressure_at_sea_level = kwargs.get("annual_air_pressure_at_sea_level", np.full(12, 101325) * ureg.pascal)
         self.annual_salinity =                  kwargs.get("annual_salinity", np.full(12, 35 / 58.442469) * ureg.gram / ureg.kilogram)
         
         self.land_profile = kwargs.get(
