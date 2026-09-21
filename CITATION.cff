@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "pflotran-swi-2d"
+abstract: "A parametric PFLOTRAN model generator for 2D seawater intrusion in coastal aquifers."
+authors:
+  - family-names: Dutta
+    given-names: Sourav
+  - family-names: Wu
+    given-names: Kenton
+version: 0.1.0
+date-released: 2026-09-21
+repository-code: "https://github.com/REPLACE_ME/pflotran-swi-2d"
+license-url: "https://github.com/REPLACE_ME/pflotran-swi-2d#license"

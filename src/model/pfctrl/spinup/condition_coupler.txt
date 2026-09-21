@@ -1,0 +1,33 @@
+INITIAL_CONDITION
+  FLOW_CONDITION Initial
+  TRANSPORT_CONDITION Initial
+  REGION All
+END
+
+# Slope boundary condition
+BOUNDARY_CONDITION Slope
+  FLOW_CONDITION Slope
+  TRANSPORT_CONDITION Saltwater
+  REGION Slope
+END
+
+
+# Inland boundary condition
+BOUNDARY_CONDITION Creek
+  FLOW_CONDITION Creek
+  TRANSPORT_CONDITION Freshwater
+  REGION Creek
+END
+
+# Sea boundary condition
+BOUNDARY_CONDITION Recharge
+  FLOW_CONDITION Recharge
+  TRANSPORT_CONDITION Freshwater
+  REGION Top
+END
+
+BOUNDARY_CONDITION Wetted
+  FLOW_CONDITION Wetted
+  TRANSPORT_CONDITION Saltwater
+  REGION Wetted
+END

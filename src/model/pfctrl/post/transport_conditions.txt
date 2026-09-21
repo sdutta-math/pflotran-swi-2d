@@ -1,0 +1,27 @@
+ TRANSPORT_CONDITION Initial
+   TYPE zero_gradient
+   CONSTRAINT Initial
+     CONCENTRATIONS
+       Sal         1.d-10 T
+     /
+   /
+ END
+ 
+ TRANSPORT_CONDITION Freshwater 
+   TYPE zero_gradient
+   CONSTRAINT Creek
+     CONCENTRATIONS
+       Sal  1.d-10 T
+     /
+   /
+ END
+
+  TRANSPORT_CONDITION Saltwater
+   TYPE zero_gradient
+   TIME_UNITS h # note that the time units in the EXTERNAL_FILE will be in hours
+   CONSTRAINT_LIST
+     EXTERNAL_FILE constraints_list_1yr_1monthFrequency_20times_mod_resample.txt
+   /
+ END
+
+EXTERNAL_FILE constraints_1yr_1monthFrequency_20times_mod_resample.txt

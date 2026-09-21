@@ -1,0 +1,23 @@
+REGION All
+  COORDINATES
+    -1.d20 -1.d20 -1.d20
+    1.d20 1.d20 1.d20
+  /
+END
+
+REGION Recharge
+	FILE regions.h5
+END
+
+REGION Wetted
+	FILE regions.h5
+END
+
+REGION Creek
+	FILE regions.h5
+END
+
+REGION Slope 
+	FILE regions.h5
+END
+

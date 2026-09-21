@@ -1,0 +1,59 @@
+FLOW_CONDITION Initial
+  TYPE
+    LIQUID_PRESSURE hydrostatic
+  /
+  DATUM 0.0d0 0.0d0 0.0d0
+  LIQUID_PRESSURE 101325 ! 101325
+END
+
+DATASET creek_pressure
+  FILENAME creek_pressure.h5
+  HDF5_DATASET_NAME creek_pressure
+END
+
+FLOW_CONDITION Creek
+  TYPE
+    LIQUID_PRESSURE DIRICHLET
+  /
+  INTERPOLATION LINEAR
+  LIQUID_PRESSURE DATASET creek_pressure
+/
+
+DATASET slope_pressure
+  FILENAME slope_pressure.h5
+  HDF5_DATASET_NAME slope_pressure
+END
+
+
+FLOW_CONDITION Slope
+  TYPE
+    LIQUID_PRESSURE DIRICHLET
+  /
+  INTERPOLATION LINEAR
+  LIQUID_PRESSURE DATASET slope_pressure
+/
+
+DATASET wetted_pressure
+  FILENAME wetted_pressure.h5
+  HDF5_DATASET_NAME wetted_pressure
+END
+
+
+FLOW_CONDITION Wetted
+  TYPE
+    LIQUID_PRESSURE DIRICHLET
+  /
+  INTERPOLATION LINEAR
+  LIQUID_PRESSURE DATASET wetted_pressure
+/
+
+
+FLOW_CONDITION Recharge
+  TYPE
+    LIQUID_FLUX NEUMANN
+  /
+  INTERPOLATION STEP
+  LIQUID_FLUX FILE GWR_monthly_mod_30Percent.dat
+
+END
+

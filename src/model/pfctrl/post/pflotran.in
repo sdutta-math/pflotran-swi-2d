@@ -1,0 +1,197 @@
+#Description: 2D Norfolk site - Transect
+SIMULATION
+	SIMULATION_TYPE SUBSURFACE
+	PROCESS_MODELS
+		SUBSURFACE_FLOW flow
+			MODE RICHARDS
+			OPTIONS
+        		REVERT_PARAMETERS_ON_RESTART ! Reverts permeability and porosity back to the values specified in the input file instead of the checkpointed values.
+			/
+		/
+		SUBSURFACE_TRANSPORT transport
+			MODE GIRT
+			OPTIONS
+			/
+		/
+		
+   		AUXILIARY SALINITY
+      		SPECIES Sal 58.442469d0 #molar mass g/mol of NaCl
+    	/
+	/
+	CHECKPOINT
+# 		PERIODIC TIME 24.0d0 h  ! checkpoint file every day
+		PERIODIC TIME 8760.0d0 h  ! checkpoint file every year
+		FORMAT HDF5
+	/
+	INPUT_RECORD_FILE
+END
+
+SUBSURFACE
+REFERENCE_TEMPERATURE 1.
+
+#=========================== numerical methods ===================================
+NUMERICAL_METHODS FLOW
+
+	TIMESTEPPER
+		MAX_TS_CUTS 30
+		MAXIMUM_NUMBER_OF_TIMESTEPS 9999999
+	/
+	NEWTON_SOLVER
+  	  ITOL_UPDATE 1.d0     ! Convergences with max change in pressure is 1 Pa.
+  	  MAXIMUM_NUMBER_OF_ITERATIONS 20
+  	/
+	LINEAR_SOLVER
+		SOLVER ITERATIVE
+	/
+END
+
+NUMERICAL_METHODS TRANSPORT
+  TIMESTEPPER
+		MAX_TS_CUTS 30
+
+  /
+  NEWTON_SOLVER
+  /
+  LINEAR_SOLVER
+		SOLVER ITERATIVE
+  /
+END
+
+#=========================== times ============================================
+
+TIME
+  FINAL_TIME 131490.0d0 h !15 mean tropical years
+  INITIAL_TIMESTEP_SIZE 720.00d0 h
+  MAXIMUM_TIMESTEP_SIZE 720.00d0 h
+END
+
+
+
+#=========================== output options ===================================
+OUTPUT
+
+  VARIABLES
+   LIQUID_HEAD
+    LIQUID_PRESSURE
+    LIQUID_SATURATION
+    SALINITY	
+  /
+
+  TIME_UNITS hour
+  
+  SNAPSHOT_FILE
+    FORMAT HDF5 SINGLE_FILE
+    PERIODIC TIME 96.0d0 h  ! every 365 days
+  /
+  
+  MASS_BALANCE_FILE
+     PERIODIC TIME 8760.0d0 h  ! every 365 days
+  /
+
+  VELOCITY_AT_CENTER
+END
+
+
+#=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    Sal
+  /
+  OUTPUT
+    TOTAL
+  /
+END
+
+
+#=========================== discretization ===================================
+GRID
+  TYPE structured
+  NXYZ 220 1 200
+  GRAVITY 0.d0 0.d0 -9.81d0
+  ORIGIN 0.d0 0.d0 -15.0d0
+  DXYZ
+    5.0d0
+    1.0d0
+    0.1d0
+  /
+END
+
+#=========================== water equation of state constants =================================
+EOS WATER
+  DENSITY BATZLE_AND_WANG
+  VISCOSITY BATZLE_AND_WANG
+END
+
+
+#=========================== fluid properties =================================
+FLUID_PROPERTY
+  DIFFUSION_COEFFICIENT 1.d-9
+END
+
+#=========================== material properties ==============================
+DATASET permX
+  FILENAME perm.h5
+  HDF5_DATASET_NAME perm_x
+END
+DATASET permY
+  FILENAME perm.h5
+  HDF5_DATASET_NAME perm_x
+END
+DATASET permZ
+  FILENAME perm.h5
+  HDF5_DATASET_NAME perm_z
+END
+
+DATASET poro
+  HDF5_DATASET_NAME poro
+  FILENAME poro.h5
+END
+
+MATERIAL_PROPERTY soil1 !hetero
+	ID 1
+	POROSITY DATASET poro
+	TORTUOSITY 1.d0
+	CHARACTERISTIC_CURVES sf1
+	PERMEABILITY
+		ANISOTROPIC
+        DATASET perm
+	/
+END
+
+#=========================== saturation functions =============================
+
+CHARACTERISTIC_CURVES sf1
+	SATURATION_FUNCTION VAN_GENUCHTEN
+		LIQUID_RESIDUAL_SATURATION 1.0d-01
+		M 1.7355d-01
+		ALPHA 1.63d-04
+	/
+	PERMEABILITY_FUNCTION MUALEM_VG_LIQ
+		LIQUID_RESIDUAL_SATURATION 1.0d-01
+		M 1.7355d-01
+		SMOOTH
+	/
+END
+
+#=========================== regions ==========================================
+EXTERNAL_FILE regions.txt
+
+#=========================== flow conditions ==================================
+EXTERNAL_FILE flow_conditions.txt
+
+#=========================== transport conditions =============================
+EXTERNAL_FILE transport_conditions.txt
+
+#=========================== condition couplers ===============================
+EXTERNAL_FILE condition_coupler.txt
+
+#=========================== extraction wells =================================
+#EXTERNAL_FILE source_sink.txt 
+
+#=========================== stratigraphy couplers ============================
+STRATA
+	FILE strata.h5
+END
+
+
+END_SUBSURFACE

@@ -1,0 +1,15 @@
+name: norfolk
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13.7
+  - pip=25.2
+  - numpy=2.3.3
+  - scipy=1.16.2
+  - pandas=2.3.3
+  - h5py=3.14.0
+  - pint=0.25
+  - gstools=1.7.0
+  - tqdm
+  - pytest=8.4.2
