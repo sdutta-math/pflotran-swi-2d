@@ -9,5 +9,5 @@ authors:
     given-names: Kenton
 version: 0.1.0
 date-released: 2026-09-21
-repository-code: "https://github.com/REPLACE_ME/pflotran-swi-2d"
-license-url: "https://github.com/REPLACE_ME/pflotran-swi-2d#license"
+repository-code: "https://github.com/sdutta-math/pflotran-swi-2d"
+license-url: "https://github.com/sdutta-math/pflotran-swi-2d#license"
