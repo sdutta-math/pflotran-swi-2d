@@ -8,6 +8,13 @@ version = "0.1.0"
 description = "Property-based PFLOTRAN model generation for 2D seawater intrusion simulation"
 readme = "README.md"
 license = "BSD-3-Clause"
+authors = [
+    { name = "Kenton Wu" },
+    { name = "Sourav Dutta" },
+    { name = "Dipankar Dwivedi" },
+    { name = "Matthew Farthing" },
+    { name = "Clint Dawson" },
+]
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.0",

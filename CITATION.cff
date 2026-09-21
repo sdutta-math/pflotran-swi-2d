@@ -3,11 +3,18 @@ message: "If you use this software, please cite it as below."
 title: "pflotran-swi-2d"
 abstract: "A parametric PFLOTRAN model generator for 2D seawater intrusion in coastal aquifers."
 authors:
-  - family-names: Dutta
-    given-names: Sourav
   - family-names: Wu
     given-names: Kenton
+  - family-names: Dutta
+    given-names: Sourav
+  - family-names: Dwivedi
+    given-names: Dipankar
+  - family-names: Farthing
+    given-names: Matthew
+  - family-names: Dawson
+    given-names: Clint
 version: 0.1.0
 date-released: 2026-09-21
 repository-code: "https://github.com/sdutta-math/pflotran-swi-2d"
+license: BSD-3-Clause
 license-url: "https://github.com/sdutta-math/pflotran-swi-2d#license"
