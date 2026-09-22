@@ -8,7 +8,14 @@ from pflotran_swi.units import ureg
 
 from pflotran_swi.norfolk_model import NorfolkModel
 
-class NorfolkEnsemble: 
+class NorfolkModelList(list):
+    """A list of NorfolkModel realizations that can carry a descriptive name."""
+
+    def __init__(self, *args, name=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = name
+
+class NorfolkEnsemble:
 
     def __init__(self, NorfolkModel: NorfolkModel, **kwargs): 
         self.name   =                           kwargs.get('name', 'Norfolk Ensemble')
@@ -138,5 +145,5 @@ class NorfolkEnsemble:
 
         return new_model
 
-    def draw(self, n_models=1): 
-        return [self._draw('case' + str(i)) for i in range(n_models)]
+    def draw(self, n_models=1):
+        return NorfolkModelList((self._draw('case' + str(i)) for i in range(n_models)), name=self.name)
