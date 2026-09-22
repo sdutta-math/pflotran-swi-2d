@@ -10,6 +10,14 @@ import warnings
 import shutil
 import importlib.resources
 
+def _magnitude(data):
+    """Strip pint units for numpy/h5py/pandas interop, which don't understand Quantity."""
+    if isinstance(data, pint.Quantity):
+        return data.magnitude
+    if isinstance(data, list):
+        return np.array([_magnitude(d) for d in data])
+    return data
+
 def _default_ctrl_dir(name: str) -> str:
     """Bundled Norfolk-example PFLOTRAN control deck templates (spinup/post).
 
@@ -105,7 +113,7 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_di
                                     data_list = masked_poro_data,
                                     outfilename = spinup_dir + "poro.h5")
 
-    _create_gridded_dataset(data = np.squeeze(model.pressure_profile_at_left),
+    _create_gridded_dataset(data = _magnitude(np.squeeze(model.pressure_profile_at_left)),
                             outfilename = spinup_dir + "creek_pressure.h5",
                             group_name='creek_pressure',
                             discretization= model.dz,
@@ -117,7 +125,7 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_di
                             time_units = None,
                             dimension="Z")
 
-    _create_gridded_dataset(data = np.array(model.spinup_slope_pressure_profile_record).T, 
+    _create_gridded_dataset(data = _magnitude(model.spinup_slope_pressure_profile_record).T,
                             outfilename = spinup_dir + "slope_pressure.h5",
                             group_name='slope_pressure',
                             dimension="Z", 
@@ -126,11 +134,11 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_di
                             max_buffer_size = [4],
                             interpolation_method= 'STEP',
                             cell_centered= True,
-                            time_data = model.spinup_month_record_hourly, 
+                            time_data = _magnitude(model.spinup_month_record_hourly), 
                             time_units = 'h'
     )
 
-    _create_gridded_dataset(data = np.array(model.spinup_wetted_pressure_profile_record).T,
+    _create_gridded_dataset(data = _magnitude(model.spinup_wetted_pressure_profile_record).T,
                             outfilename = spinup_dir + "wetted_pressure.h5",
                             group_name='wetted_pressure',
                             dimension="X",
@@ -139,12 +147,12 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_di
                             max_buffer_size = [4],
                             interpolation_method= 'STEP',
                             cell_centered= True,
-                            time_data = model.spinup_month_record_hourly,
+                            time_data = _magnitude(model.spinup_month_record_hourly),
                             time_units = 'h'
     )
 
     gwr_annual = np.ones((12,)) * model.recharge
-    df_gwr_month = {'TIME_UNITS': model.spinup_month_record_hourly[:12], 'hour': gwr_annual}
+    df_gwr_month = {'TIME_UNITS': _magnitude(model.spinup_month_record_hourly[:12]), 'hour': _magnitude(gwr_annual)}
     df_gwr_month = pd.DataFrame(df_gwr_month)
     df_gwr_month.to_csv(spinup_dir + '/GWR_monthly_mod_30Percent.dat', index=False, sep = ' ', float_format='%.6e')
     
@@ -221,7 +229,7 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
                 [6]*len(regions[3])]
     _write_pf_surfaces(region_names, regions, face_ids, outfilename = post_dir + "regions.h5")
 
-    _create_gridded_dataset(data = np.squeeze(model.pressure_profile_at_left),
+    _create_gridded_dataset(data = _magnitude(np.squeeze(model.pressure_profile_at_left)),
                             outfilename = post_dir + "creek_pressure.h5",
                             group_name='creek_pressure',
                             discretization= model.dz,
@@ -233,7 +241,7 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
                             time_units = None,
                             dimension="Z")
     
-    _create_gridded_dataset(data = np.array(model.post_spinup_slope_pressure_profile_record).T,
+    _create_gridded_dataset(data = _magnitude(model.post_spinup_slope_pressure_profile_record).T,
                             outfilename = post_dir + "slope_pressure.h5",
                             group_name='slope_pressure',
                             dimension="Z",
@@ -242,11 +250,11 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
                             max_buffer_size = [4],
                             interpolation_method= 'STEP',
                             cell_centered= True,
-                            time_data = model.hour_monthly_record,
+                            time_data = _magnitude(model.hour_monthly_record),
                             time_units = 'h'
     )
 
-    _create_gridded_dataset(data = np.array(coastal_pressures).T,
+    _create_gridded_dataset(data = _magnitude(coastal_pressures).T,
                             outfilename = post_dir + "coastal_pressure.h5",
                             group_name='coastal_pressure',
                             dimension="X",
@@ -255,12 +263,12 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
                             max_buffer_size = [4],
                             interpolation_method= 'STEP',
                             cell_centered= True,
-                            time_data = model.hour_monthly_record,
+                            time_data = _magnitude(model.hour_monthly_record),
                             time_units = 'h'
     )
 
     gwr_annual = np.ones((12,)) * model.recharge
-    df_gwr_month = {'TIME_UNITS': model.hour_monthly_record[:12], 'hour': gwr_annual}
+    df_gwr_month = {'TIME_UNITS': _magnitude(model.hour_monthly_record[:12]), 'hour': _magnitude(gwr_annual)}
     df_gwr_month = pd.DataFrame(df_gwr_month)
     df_gwr_month.to_csv(post_dir + '/GWR_monthly_mod_30Percent.dat', index=False, sep = ' ', float_format='%.6e')
 

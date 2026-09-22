@@ -132,7 +132,7 @@ def test_slope_pressure(test_data):
     )
 
     expected_slope_pressure = test_data["slope_data"]
-    calc_slope_pressure = np.array(model.spinup_slope_pressure_profile_record).T
+    calc_slope_pressure = np.array([r.magnitude for r in model.spinup_slope_pressure_profile_record]).T
 
     np.testing.assert_allclose(
         calc_slope_pressure,
