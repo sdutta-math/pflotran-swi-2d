@@ -24,6 +24,12 @@ class NorfolkEnsemble:
         self.covariance_model =                 kwargs.get('covariance_model', gs.Exponential)
         self.len_scales =                       kwargs.get('len_scales', [25.0, 20.0])
         self.angles =                           kwargs.get('angles', 0)
+        # Single sequential seed stream for every random draw in the ensemble (subsurface
+        # field, land/ocean profiles, salinity/pressure/water-table/recharge distributions).
+        # Reproducibility depends on the seed AND on draw order: since master_rng() hands
+        # out the next int from one RandomState stream, adding, removing, or reordering a
+        # draw call shifts every seed drawn after it, changing the resulting realizations
+        # even with the same seed value.
         self.master_rng =       MasterRNG(kwargs.get('seed', 20201007))
     
         self.water_table_gain_from_msl_dist =   kwargs.get("water_table_gain_from_msl_dist", stats.uniform(loc=0.5, scale=2.0))
@@ -54,15 +60,19 @@ class NorfolkEnsemble:
 
         nzs = np.ones((nx,), dtype = np.float32)
 
-        if left_elv_range[0] == left_elv_range[1]: 
+        # Local RNG seeded from master_rng() instead of the numpy global RNG, so this walk
+        # is reproducible from the ensemble's seed alone.
+        rs = np.random.RandomState(self.master_rng())
+
+        if left_elv_range[0] == left_elv_range[1]:
             nzs[0] = left_elv_range[0]
-        else: 
-            nzs[0] = np.random.randint(left_elv_range[0], left_elv_range[1])
-        
+        else:
+            nzs[0] = rs.randint(left_elv_range[0], left_elv_range[1])
+
         if right_elv_range[0] == right_elv_range[1]:
             nzs[-1] = right_elv_range[0]
         else:
-            nzs[-1] = np.random.randint(right_elv_range[0], right_elv_range[1])
+            nzs[-1] = rs.randint(right_elv_range[0], right_elv_range[1])
 
         max_scale = (master_envelope_max - dhz) / (nz - dhz) * (nzs[0] - nzs[-1]) + nzs[-1]
         min_scale = (master_envelope_min - dhz) / (nz - dhz) * (nzs[0] - nzs[-1]) + nzs[-1]
@@ -70,11 +80,11 @@ class NorfolkEnsemble:
         for i in range(1, nx-1):
             min_val = np.max(np.array([nzs[i-1] - 3, min_scale[i], nzs[-1]]))
             max_val = np.min(np.array([nzs[i-1] + 3, max_scale[i]])) + 1
-            if max_val - min_val < 1: 
+            if max_val - min_val < 1:
                 nzs[i] = int(min_val)
             else:
-                nzs[i] = np.random.randint(min_val, max_val)
-        
+                nzs[i] = rs.randint(min_val, max_val)
+
         return nzs
 
     @staticmethod 
@@ -119,17 +129,17 @@ class NorfolkEnsemble:
             smoothed = self._llnl_smooth_profile(sample) 
             return self.template.nz_to_elevation(smoothed)
 
-    def _draw_salinity_record(self): 
-        return [self.salinity_dists[month].rvs() for month in range(12)] * ureg.gram/ureg.kg
-    
+    def _draw_salinity_record(self):
+        return [self.salinity_dists[month].rvs(random_state=self.master_rng()) for month in range(12)] * ureg.gram/ureg.kg
+
     def _draw_air_pressure_at_msl(self):
-        return [self.air_pressure_at_msl_dist.rvs() for _ in range(12)] * ureg.pascal
+        return [self.air_pressure_at_msl_dist.rvs(random_state=self.master_rng()) for _ in range(12)] * ureg.pascal
 
     def _draw_water_table_gain_from_msl(self):
-        return self.water_table_gain_from_msl_dist.rvs()* ureg.meter
-    
+        return self.water_table_gain_from_msl_dist.rvs(random_state=self.master_rng())* ureg.meter
+
     def _draw_recharge(self):
-        return self.recharge_dist.rvs() *ureg.meter/ureg.year
+        return self.recharge_dist.rvs(random_state=self.master_rng()) *ureg.meter/ureg.year
 
     def _draw(self, name): 
         new_model = copy.copy(self.template)
