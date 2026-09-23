@@ -203,9 +203,8 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
     for static_file in static_files:
         link_spinup(static_file, static_file)
     
-    spinup_dur_hourly = model.SPINUP_DURATION.to(ureg.hour).magnitude
-    restart_file = '/pflotran_spinup-' + str(int(spinup_dur_hourly)).zfill(5) + '.h5'
-    link_spinup(restart_file, 'pflotran_spinup_restart.h5', strict=False)
+    # PFLOTRAN writes the final-state checkpoint as <input_prefix>-restart.h5 at the end of the spinup run.
+    link_spinup('pflotran-restart.h5', 'pflotran_spinup_restart.h5', strict=False)
 
     # Combine into one PFLOTRAN region, since PFLOTRAN doesn't support dynamic regions. 
     

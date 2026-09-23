@@ -53,3 +53,15 @@ def test_coupler_regions_are_declared_and_written(tmp_path, phase):
         written = set(hf["Regions"].keys())
     assert used <= declared, f"{phase}: coupler uses undeclared regions {used - declared}"
     assert declared - {"All"} <= written, f"{phase}: regions.txt declares regions missing from regions.h5 {declared - {'All'} - written}"
+
+
+def test_post_restart_link_matches_input(tmp_path):
+    """post/pflotran.in RESTARTs from a file that pfwrite links to the spinup's final-state checkpoint."""
+    pfw.write(NorfolkModel(), dir=str(tmp_path))
+    post_dir = tmp_path / "postrun"
+    restart_name = re.search(r"RESTART\s+FILENAME (\S+)", (post_dir / "pflotran.in").read_text()).group(1)
+    assert "RESET_TO_TIME_ZERO" in (post_dir / "pflotran.in").read_text()
+    link = post_dir / restart_name
+    assert os.path.islink(link), f"{restart_name} not linked in postrun"
+    # dangling until the spinup has actually run; must still point inside this ensemble member's spinup dir
+    assert os.readlink(link) == str((tmp_path / "spinup" / "pflotran-restart.h5").resolve())
