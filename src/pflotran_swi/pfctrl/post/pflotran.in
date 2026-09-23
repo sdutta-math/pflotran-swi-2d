@@ -60,7 +60,7 @@ END
 #=========================== times ============================================
 
 TIME
-  FINAL_TIME 131490.0d0 h !15 mean tropical years
+  FINAL_TIME 262980.0d0 h !30 mean tropical years
   INITIAL_TIMESTEP_SIZE 720.00d0 h
   MAXIMUM_TIMESTEP_SIZE 720.00d0 h
 END
