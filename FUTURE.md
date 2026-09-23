@@ -21,6 +21,8 @@ Refactor NorfolkModel to export entirely DataArrays to further reinforce Model-W
 Improve error catches 
 ## Point Extraction Wells
 Add point extraction wells to the domain (NorfolkModel has no well/extraction/pumping attributes, NorfolkEnsemble has no draw method for one). A scaffold exists but is disabled: `pfctrl/spinup/pflotran.in` and `pfctrl/post/pflotran.in` both have a commented-out `#EXTERNAL_FILE source_sink.txt` under `extraction wells`, no `source_sink.txt` present, and `pfwrite.py` has a bare `# Well stuff here` stub in `write_post_run`. Checked SWINet_dev's abstractify, extended, hotfix, and metadata branches for a prior implementation - same disabled scaffold and stub on all of them, no working feature found anywhere.
+## Elevation Profile Resolution Coupling
+`NorfolkEnsemble._llnl_random_walk` and `_llnl_smooth_profile` bound the land/shelf elevation walk with absolute cell counts (`dhz=50`, the `+-3` per-step bound, `d_smooth=10`), none scaled by dx/dz. Changing grid resolution (nx/nz) alone changes the taper proportion, the max realistic terrain slope, and the smoothing length in physical units -- so the generated profile ensemble's statistical character is resolution-coupled, not resolution-invariant. Also assumes nz > dhz. FIXMEs left in code at each constant; not fixed yet, would need dhz/+-3/d_smooth expressed in meters and converted via dx/dz instead of raw cell counts.
 
 # Future Branches
 

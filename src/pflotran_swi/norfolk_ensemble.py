@@ -47,12 +47,18 @@ class NorfolkEnsemble:
 
 
     def _llnl_random_walk(self, left_elv_range: tuple, right_elv_range: tuple, nx, nz, dhz = 50) -> int:
-        """ 
-        This is the way LLNL sampled their random walk. 
+        """
+        This is the way LLNL sampled their random walk.
         They sample elevations in cells, so to keep it consistent, it is converted back into physical units
-        at the end of the function. 
+        at the end of the function.
 
         The walk increment is uniform with the increment bounded by an envelope, endpoints, and a walk term.
+
+        FIXME: dhz (default 50) and the +-3 per-step bound below are absolute cell counts,
+        not scaled by dx/dz. Changing grid resolution (nx/nz) without touching these changes
+        the taper proportion and the max realistic terrain slope, i.e. the statistical
+        character of generated profiles is resolution-coupled, not resolution-invariant.
+        Also assumes nz > dhz -- coarsening nz below ~50 breaks the envelope.
         """
 
         master_envelope_max = np.log(range(nx, 0, -1)) / np.log(nx) * (nz - dhz) + dhz
@@ -78,6 +84,7 @@ class NorfolkEnsemble:
         min_scale = (master_envelope_min - dhz) / (nz - dhz) * (nzs[0] - nzs[-1]) + nzs[-1]
 
         for i in range(1, nx-1):
+            # +-3 is a hard cell-count bound, not derived from dz -- see FIXME on this method.
             min_val = np.max(np.array([nzs[i-1] - 3, min_scale[i], nzs[-1]]))
             max_val = np.min(np.array([nzs[i-1] + 3, max_scale[i]])) + 1
             if max_val - min_val < 1:
@@ -87,9 +94,13 @@ class NorfolkEnsemble:
 
         return nzs
 
-    @staticmethod 
-    def _llnl_smooth_profile(profile, d_smooth = 10) -> int:  
+    @staticmethod
+    def _llnl_smooth_profile(profile, d_smooth = 10) -> int:
         # Simple moving average smoothing
+        # FIXME: d_smooth is a cell-count window (~2*d_smooth+1 x-cells), not a physical
+        # length. Refining nx shrinks the real smoothing distance, so profile roughness
+        # changes with grid resolution alone -- same coupling issue as _llnl_random_walk's
+        # dhz/+-3 constants.
         smoothed_elevations = profile.copy()
         nx, = profile.shape
         for j in range(1, nx-1):
