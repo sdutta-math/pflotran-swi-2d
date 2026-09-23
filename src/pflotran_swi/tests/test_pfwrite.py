@@ -40,3 +40,16 @@ def test_post_coastal_dataset_origin(tmp_path):
     with h5py.File(tmp_path / "postrun" / "coastal_pressure.h5", "r") as hf:
         assert hf["coastal_pressure/Data"].shape[0] == n_coastal
         assert hf["coastal_pressure"].attrs["Origin"] == pytest.approx((model.nx - n_coastal) * model.dx.magnitude)
+
+
+@pytest.mark.parametrize("phase", ["spinup", "postrun"])
+def test_coupler_regions_are_declared_and_written(tmp_path, phase):
+    """Every REGION a boundary/initial condition uses must be declared in regions.txt and exist in regions.h5."""
+    pfw.write(NorfolkModel(), dir=str(tmp_path))
+    run_dir = tmp_path / phase
+    used = set(re.findall(r"^\s*REGION (\w+)", (run_dir / "condition_coupler.txt").read_text(), re.M))
+    declared = set(re.findall(r"^REGION (\w+)", (run_dir / "regions.txt").read_text(), re.M))
+    with h5py.File(run_dir / "regions.h5", "r") as hf:
+        written = set(hf["Regions"].keys())
+    assert used <= declared, f"{phase}: coupler uses undeclared regions {used - declared}"
+    assert declared - {"All"} <= written, f"{phase}: regions.txt declares regions missing from regions.h5 {declared - {'All'} - written}"
