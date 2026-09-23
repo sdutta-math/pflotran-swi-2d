@@ -22,7 +22,13 @@ class NorfolkEnsemble:
         self.template =                         NorfolkModel
 
         self.covariance_model =                 kwargs.get('covariance_model', gs.Exponential)
-        self.len_scales =                       kwargs.get('len_scales', [25.0, 20.0])
+        # [25, 20] m was the original (pre-abstractify) design value, carried
+        # over unchanged -- but with correct meter-space positions (see
+        # _draw_subsurface_field), 20 m of vertical correlation is ~the
+        # entire lz=20 m domain height, i.e. almost no vertical structure.
+        # [25, 2] keeps the horizontal scale and sizes the vertical scale to
+        # this domain's actual thickness instead.
+        self.len_scales =                       kwargs.get('len_scales', [25.0, 2.0])
         self.angles =                           kwargs.get('angles', 0)
         # Single sequential seed stream for every random draw in the ensemble (subsurface
         # field, land/ocean profiles, salinity/pressure/water-table/recharge distributions).
@@ -117,27 +123,39 @@ class NorfolkEnsemble:
     def _draw_subsurface_field(self):
         model = self.covariance_model(dim=2, var=1.0, len_scale=self.len_scales, angles=self.angles)
         srf = gs.SRF(model, seed = 1)
-        idxs = np.arange(self.template.nx)
-        idzs = np.arange(self.template.nz)
+        # Position arrays must be in the same units as len_scales (meters) --
+        # gstools has no notion of grid spacing, so passing bare cell indices
+        # here previously made len_scale=[25,20] mean 25/20 *cells*, not
+        # meters. With dx=5 m, dz=0.1 m (a 50:1 grid-spacing ratio) that
+        # silently produced a ~36:1 physical anisotropy (~90 m x ~2.5 m,
+        # empirically measured) instead of the intended near-isotropic
+        # 25 m x 20 m field.
+        idxs = np.arange(self.template.nx) * self.template.dx.magnitude
+        idzs = np.arange(self.template.nz) * self.template.dz.magnitude
         srf.set_pos([idxs, idzs], "structured")
         date_time = date.datetime.now()
         seed = date_time.microsecond
         return srf(seed=self.master_rng())
     
-    def _draw_land_profile(self): 
-        if self.land_profile_dist == "LLNL": 
+    def _draw_land_profile(self):
+        if self.land_profile_dist == "LLNL":
             left_nz = self.template.ELEVATION_LEFT_NZ
             right_nz = self.template.mean_sea_level_nz
-            sample = self._llnl_random_walk((left_nz, left_nz), (right_nz, right_nz), self.template.nx, self.template.nz)
-            smoothed = self._llnl_smooth_profile(sample) 
+            # Walk spans the land region only (land_nx columns), not the
+            # full domain width -- NorfolkModel.land_profile requires
+            # len(value) == land_nx (see __setattr__).
+            sample = self._llnl_random_walk((left_nz, left_nz), (right_nz, right_nz), self.template.land_nx, self.template.nz)
+            smoothed = self._llnl_smooth_profile(sample)
             return self.template.nz_to_elevation(smoothed)
-        
-    def _draw_ocean_profile(self): 
-        if self.ocean_profile_dist == "LLNL": 
+
+    def _draw_ocean_profile(self):
+        if self.ocean_profile_dist == "LLNL":
             left_nz = self.template.mean_sea_level_nz
             right_nz = self.template.slope_nz
-            sample = self._llnl_random_walk((left_nz,left_nz), (right_nz,right_nz), self.template.nx, self.template.nz)
-            smoothed = self._llnl_smooth_profile(sample) 
+            # Walk spans the shelf region only (shelf_nx columns) -- see
+            # note in _draw_land_profile above.
+            sample = self._llnl_random_walk((left_nz,left_nz), (right_nz,right_nz), self.template.shelf_nx, self.template.nz)
+            smoothed = self._llnl_smooth_profile(sample)
             return self.template.nz_to_elevation(smoothed)
 
     def _draw_salinity_record(self):
@@ -157,9 +175,13 @@ class NorfolkEnsemble:
         
         new_model.model_name = name
         new_model.field = self._draw_subsurface_field()
-        new_model.land_elevation_profile = self._draw_land_profile()
-        new_model.ocean_elevation_profile = self._draw_ocean_profile()
-        new_model.annual_salinity_record = self._draw_salinity_record()
+        # NorfolkModel reads land_profile/shelf_profile/annual_salinity;
+        # assigning under any other name (as this did previously) is a
+        # silent no-op -- the draw runs, the result is discarded, and every
+        # realization keeps the template's default deterministic profile.
+        new_model.land_profile = self._draw_land_profile()
+        new_model.shelf_profile = self._draw_ocean_profile()
+        new_model.annual_salinity = self._draw_salinity_record()
         new_model.annual_air_pressure_at_sea_level = self._draw_air_pressure_at_msl()
         new_model.dh_sea = self._draw_water_table_gain_from_msl()
         new_model.recharge = self._draw_recharge()
