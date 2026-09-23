@@ -211,3 +211,16 @@ def test_dynamic_region():
         current_wetted_p = wetted_p[nt]
         current_coast_p = np.concatenate((current_surf_p, current_wetted_p))
         assert len(current_coast_p) == num_coastal[0], f"Number of coastal pressure cells should remain constant, but changed at step {nt}" 
+
+def test_post_spinup_coastal_and_recharge_partition_top():
+    model = NorfolkModel()
+    terminal_nz = model.elevation_to_nz(model.mean_sea_level_elevation + model.sea_level_anomaly_rate * model.POST_SPINUP_DURATION)
+    assert model.anomaly_nz == terminal_nz - model.mean_sea_level_nz
+    assert 0 < model.anomaly_nz < 10, "Sea level rise should be a few cells, not an absolute index"
+    coastal = np.squeeze(model.region_post_spinup_coastal)
+    recharge = np.squeeze(model.region_post_spinup_recharge)
+    assert len(recharge) > 0, "Land above the terminal sea level must still receive recharge"
+    assert len(coastal) < model.nx
+    assert len(coastal) + len(recharge) == model.nx
+    assert len(np.intersect1d(coastal, recharge)) == 0
+    assert len(coastal) > len(np.squeeze(model.region_spinup_wetted)), "Coastal extent must exceed the spinup wetted extent"

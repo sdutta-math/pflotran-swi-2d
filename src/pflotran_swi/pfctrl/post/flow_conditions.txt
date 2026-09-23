@@ -33,18 +33,18 @@ FLOW_CONDITION Sea
   LIQUID_PRESSURE DATASET sea_pressure
 /
 
-DATASET wetted_pressure
-  FILENAME wetted_pressure.h5
-  HDF5_DATASET_NAME wetted_pressure
+DATASET coastal_pressure
+  FILENAME coastal_pressure.h5
+  HDF5_DATASET_NAME coastal_pressure
 END
 
 
-FLOW_CONDITION Wetted
+FLOW_CONDITION Coastal
   TYPE
     LIQUID_PRESSURE DIRICHLET
   /
   INTERPOLATION LINEAR
-  LIQUID_PRESSURE DATASET wetted_pressure
+  LIQUID_PRESSURE DATASET coastal_pressure
 /
 
 

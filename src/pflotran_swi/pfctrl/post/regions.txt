@@ -9,7 +9,7 @@ REGION Recharge
 	FILE regions.h5
 END
 
-REGION Wetted
+REGION Coastal
 	FILE regions.h5
 END
 

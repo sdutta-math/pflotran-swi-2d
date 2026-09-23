@@ -190,8 +190,10 @@ class NorfolkModel:
 
     @property
     def anomaly_nz(self) -> int:  
+        """ Total post-spinup sea level rise, in cells (not an absolute elevation index) """
         total_sea_level_anomaly = self.sea_level_anomaly_rate * self.POST_SPINUP_DURATION
-        return self.elevation_to_nz(total_sea_level_anomaly)
+        terminal_nz = self.elevation_to_nz(self.mean_sea_level_elevation + total_sea_level_anomaly)
+        return terminal_nz - self.mean_sea_level_nz
 
     @property 
     def sea_level_record(self, freq=ureg.month): 
