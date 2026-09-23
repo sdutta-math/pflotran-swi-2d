@@ -85,10 +85,10 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_di
                         material_id = np.reshape(model.subsurface_mask, (model.nx * 1 * model.nz,), order='F').astype(np.int8),
                         outfilename = spinup_dir + "strata.h5")
     
-    region_names = ["Recharge", "Creek", "Slope", "Wetted"]
+    region_names = ["Recharge", "Creek", "Sea", "Wetted"]
     regions = [np.squeeze(model.region_spinup_recharge), 
                np.squeeze(model.region_creek), 
-               np.squeeze(model.region_slope), 
+               np.squeeze(model.region_sea), 
                np.squeeze(model.region_spinup_wetted)]
     face_ids = [[6]*len(regions[0]), 
                 [1]*len(regions[1]), 
@@ -125,9 +125,9 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_di
                             time_units = None,
                             dimension="Z")
 
-    _create_gridded_dataset(data = _magnitude(model.spinup_slope_pressure_profile_record).T,
-                            outfilename = spinup_dir + "slope_pressure.h5",
-                            group_name='slope_pressure',
+    _create_gridded_dataset(data = _magnitude(model.spinup_sea_pressure_profile_record).T,
+                            outfilename = spinup_dir + "sea_pressure.h5",
+                            group_name='sea_pressure',
                             dimension="Z", 
                             discretization= model.dz,
                             origin = model.origin[1],
@@ -217,10 +217,10 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
     for nt in range(int(model.POST_SPINUP_DURATION.to(ureg.month).magnitude)):
         coastal_pressures.append(np.concatenate((surf_pressures[nt], wetted_pressures[nt])))
     
-    region_names = ["Recharge", "Creek", "Slope", "Coastal"]
+    region_names = ["Recharge", "Creek", "Sea", "Coastal"]
     regions = [np.squeeze(model.region_post_spinup_recharge), 
                np.squeeze(model.region_creek),
-               np.squeeze(model.region_slope),
+               np.squeeze(model.region_sea),
                np.squeeze(model.region_post_spinup_coastal)]
     
     face_ids = [[6]*len(regions[0]),
@@ -241,9 +241,9 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
                             time_units = None,
                             dimension="Z")
     
-    _create_gridded_dataset(data = _magnitude(model.post_spinup_slope_pressure_profile_record).T,
-                            outfilename = post_dir + "slope_pressure.h5",
-                            group_name='slope_pressure',
+    _create_gridded_dataset(data = _magnitude(model.post_spinup_sea_pressure_profile_record).T,
+                            outfilename = post_dir + "sea_pressure.h5",
+                            group_name='sea_pressure',
                             dimension="Z",
                             discretization= model.dz,
                             origin = model.origin[1],

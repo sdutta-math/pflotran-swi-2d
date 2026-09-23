@@ -18,12 +18,12 @@ class NorfolkModel:
     - Rectangular specifications for the super-grid
     - Specification for subsurface domain represented by a 2D mask 
     - Ocean/land profile specified via bisected profile specification for left/right profiles  
-    - Fixed specifications for the ocean-land boundary and shelf-slope elevations 
+    - Fixed specifications for the ocean-land boundary and shelf-break elevation 
     - Specification of permeability and porosity for the subsurface domain
     - Specification of a freshwater water table at the left boundary via a hydrostatic reference head (pressure coordinates)
     - Specification of a rainfall source at the top boundary via a neumann condition 
     - Specification of a wetted region at the top boundary via a hydrostatic pressure condition integrated from reference head @ mean_sea_level
-    - Specification of a far field condition at the right boundary via a pressure dirichlet condition 
+    - Specification of a far field (Sea) condition at the right boundary via a pressure dirichlet condition, spanning the domain from the bottom up to the shelf break 
     - Specification of an (implicit) no flow condition at the bottom boundary and vertical profile boundaries
     - Specification of a spinup 
     - Specification of a post-spinup period with sea level rise 
@@ -51,7 +51,7 @@ class NorfolkModel:
         self.l_shelf =                          kwargs.get("l_shelf", 100.0 * ureg.meter)
         self.ELEVATION_LEFT =                   kwargs.get("ELEVATION_LEFT", 5.0 * ureg.meter)
         self.mean_sea_level_elevation =         kwargs.get("mean_sea_level_elevation", 0.0 * ureg.meter)
-        self.slope_elevation =                  kwargs.get("slope_elevation", -8.0 * ureg.meter)
+        self.shelf_break_elevation =                  kwargs.get("shelf_break_elevation", -8.0 * ureg.meter)
         # endregion
 
         # region Subsurface properties 
@@ -80,7 +80,7 @@ class NorfolkModel:
         )
         self.shelf_profile = kwargs.get(
             "shelf_profile",
-            np.linspace(self.mean_sea_level_elevation.magnitude, self.slope_elevation.magnitude, 40) * ureg.meter
+            np.linspace(self.mean_sea_level_elevation.magnitude, self.shelf_break_elevation.magnitude, 40) * ureg.meter
         )
         self.field = kwargs.get("field", np.ones((self.nx, self.nz)))
         # endregion
@@ -149,7 +149,7 @@ class NorfolkModel:
         ix = np.arange(self.nx)
         top_ids =   self.cell_ids[ix,0,self.profile_nz]
         left_ids =  self.cell_ids[0,:,:]
-        right_ids = self.cell_ids[-1,:,:self.slope_nz+1]
+        right_ids = self.cell_ids[-1,:,:self.shelf_break_nz+1]
         bot_ids =   self.cell_ids[:,:,0]
         return bot_ids, right_ids, top_ids, left_ids
 
@@ -159,8 +159,9 @@ class NorfolkModel:
         return self.elevation_to_nz(self.mean_sea_level_elevation)
     
     @property
-    def slope_nz(self):
-        return self.elevation_to_nz(self.slope_elevation)
+    def shelf_break_nz(self):
+        # Also the top of the Sea (right) boundary.
+        return self.elevation_to_nz(self.shelf_break_elevation)
     
     @property
     def ELEVATION_LEFT_NZ(self):
@@ -230,7 +231,7 @@ class NorfolkModel:
         return self.boundary_ids[3]
     
     @property 
-    def region_slope(self): 
+    def region_sea(self): 
         return self.boundary_ids[1]
 
     @property 
@@ -305,8 +306,8 @@ class NorfolkModel:
         return hydrostatic_from_mean_sea_level + self.freshwater_density * 9.81 * ureg.meter / ureg.second**2 * self.dh_sea
     
     @property
-    def spinup_slope_pressure_profile_record(self):
-        region_elevations = self.id_to_nz(self.region_slope) * self.dz + self.origin[1]
+    def spinup_sea_pressure_profile_record(self):
+        region_elevations = self.id_to_nz(self.region_sea) * self.dz + self.origin[1]
         hydrostatic_from_mean_sea_level = self.pressure_coordinates_at(
             elevation=region_elevations,
             reference_head=self.SPINUP_AIR_PRESSURE_AT_SEA_LEVEL,
@@ -368,9 +369,9 @@ class NorfolkModel:
     # endregion
 
     @property
-    def post_spinup_slope_pressure_profile_record(self):
+    def post_spinup_sea_pressure_profile_record(self):
         num_months = int(self.POST_SPINUP_DURATION.to(ureg.month).magnitude)
-        region_elevations = self.nz_to_elevation(self.id_to_nz(self.region_slope))
+        region_elevations = self.nz_to_elevation(self.id_to_nz(self.region_sea))
         hydrostatic_from_rising_sea = self.pressure_coordinates_at(
             elevation=region_elevations,
             reference_head=np.expand_dims(self.air_pressure_record, axis =1),

@@ -28,9 +28,9 @@ plausible aquifer configurations.
 
 - Rectangular super-grid with a 2D subsurface domain mask
 - Land/ocean elevation profiles specified independently, joined at a
-  shelf-slope break
+  shelf break
 - Freshwater water table (left/creek boundary), wetted top-boundary
-  hydrostatic condition, far-field right-boundary pressure condition
+  hydrostatic condition, far-field Sea (right-boundary) pressure condition
 - Correlated random permeability/porosity fields (via
   [`gstools`](https://github.com/GeoStat-Framework/GeoStat-Framework))
 - Spinup period (steady mean sea level and salinity) followed by a

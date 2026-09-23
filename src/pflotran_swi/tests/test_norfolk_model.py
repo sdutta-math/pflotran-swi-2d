@@ -25,13 +25,13 @@ def test_data():
         creek_pressure_data = hf['/creek_pressure/Data'][:]
     
     with h5py.File(data_dir / "sea_pressure.h5", 'r') as hf:
-        slope_pressure_data = hf['/sea_pressure/Data'][:]
+        sea_pressure_data = hf['/sea_pressure/Data'][:]
 
     return {
         "creek_pressure": creek_pressure_data,
         "h_inland": h_inland_data,
         "pressure_sea": pressure_sea_data,
-        "slope_data": slope_pressure_data
+        "sea_data": sea_pressure_data
     }
 
 
@@ -124,37 +124,37 @@ def test_creek_pressure(test_data):
         err_msg="Calculated creek pressure doesn't match reference data from HDF5"
     )
 
-def test_slope_pressure(test_data):
+def test_sea_pressure(test_data):
 
     model = NorfolkModel(
         annual_air_pressure_at_sea_level = test_data["pressure_sea"][0] * ureg.pascal,
         SPINUP_DURATION = 10 * ureg.year
     )
 
-    expected_slope_pressure = test_data["slope_data"]
-    calc_slope_pressure = np.array([r.magnitude for r in model.spinup_slope_pressure_profile_record]).T
+    expected_sea_pressure = test_data["sea_data"]
+    calc_sea_pressure = np.array([r.magnitude for r in model.spinup_sea_pressure_profile_record]).T
 
     np.testing.assert_allclose(
-        calc_slope_pressure,
-        expected_slope_pressure,
+        calc_sea_pressure,
+        expected_sea_pressure,
         atol=981,  # Allowable tolerance (1 meter of water column)
-        err_msg="Calculated slope pressure doesn't match reference data from HDF5"
+        err_msg="Calculated sea pressure doesn't match reference data from HDF5"
     )
  
-def test_region_slope(monkeypatch):
+def test_region_sea(monkeypatch):
 
     monkeypatch.setattr("pflotran_swi.norfolk_model.NorfolkModel.__setattr__", object.__setattr__)
     
     top_profile = np.linspace(5, 0.0, 8) * ureg.meter
     ocean_profile = np.linspace(-5.0, -6.0, 2) * ureg.meter
-    model = NorfolkModel(nx = 10, nz = 5, slope_elevation = -6.0 * ureg.meter, land_profile = top_profile, shelf_profile = ocean_profile)
+    model = NorfolkModel(nx = 10, nz = 5, shelf_break_elevation = -6.0 * ureg.meter, land_profile = top_profile, shelf_profile = ocean_profile)
 
     expected_region = [9, 19, 29]
-    calc_region = model.region_slope.flatten()
+    calc_region = model.region_sea.flatten()
 
     np.testing.assert_equal(calc_region, expected_region)
 
-    assert np.squeeze(calc_region).shape == (3,), "Region slope shape mismatch"
+    assert np.squeeze(calc_region).shape == (3,), "Region sea shape mismatch"
 
 def test_subsurface_mask(monkeypatch):
 
@@ -180,7 +180,7 @@ def test_boundary_ids(monkeypatch):
     assert left_ids.shape == (1,200), "Left boundary IDs should be a 1D array"
 
     right_ids = model.boundary_ids[1]
-    assert right_ids.shape == (1,model.slope_nz+1), "Right boundary IDs should be a 1D array"
+    assert right_ids.shape == (1,model.shelf_break_nz+1), "Right boundary IDs should be a 1D array"
 
     bot_ids = model.boundary_ids[0]
     assert bot_ids.shape == (model.nx,1), "Bottom boundary IDs should be a 1D array"

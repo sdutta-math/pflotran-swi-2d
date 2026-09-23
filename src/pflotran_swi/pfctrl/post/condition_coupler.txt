@@ -4,11 +4,11 @@ INITIAL_CONDITION
   REGION All
 END
 
-# Slope boundary condition
-BOUNDARY_CONDITION Slope
-  FLOW_CONDITION Slope
+# Sea boundary condition
+BOUNDARY_CONDITION Sea
+  FLOW_CONDITION Sea
   TRANSPORT_CONDITION Saltwater
-  REGION Slope
+  REGION Sea
 END
 
 
@@ -19,7 +19,7 @@ BOUNDARY_CONDITION Creek
   REGION Creek
 END
 
-# Sea boundary condition
+# Recharge boundary condition
 BOUNDARY_CONDITION Recharge
   FLOW_CONDITION Recharge
   TRANSPORT_CONDITION Freshwater

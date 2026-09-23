@@ -19,18 +19,18 @@ FLOW_CONDITION Creek
   LIQUID_PRESSURE DATASET creek_pressure
 /
 
-DATASET slope_pressure
-  FILENAME slope_pressure.h5
-  HDF5_DATASET_NAME slope_pressure
+DATASET sea_pressure
+  FILENAME sea_pressure.h5
+  HDF5_DATASET_NAME sea_pressure
 END
 
 
-FLOW_CONDITION Slope
+FLOW_CONDITION Sea
   TYPE
     LIQUID_PRESSURE DIRICHLET
   /
   INTERPOLATION LINEAR
-  LIQUID_PRESSURE DATASET slope_pressure
+  LIQUID_PRESSURE DATASET sea_pressure
 /
 
 DATASET wetted_pressure

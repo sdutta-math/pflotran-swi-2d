@@ -17,7 +17,7 @@ REGION Creek
 	FILE regions.h5
 END
 
-REGION Slope 
+REGION Sea 
 	FILE regions.h5
 END
 

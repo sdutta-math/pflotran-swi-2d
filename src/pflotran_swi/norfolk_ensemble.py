@@ -151,7 +151,7 @@ class NorfolkEnsemble:
     def _draw_ocean_profile(self):
         if self.ocean_profile_dist == "LLNL":
             left_nz = self.template.mean_sea_level_nz
-            right_nz = self.template.slope_nz
+            right_nz = self.template.shelf_break_nz
             # Walk spans the shelf region only (shelf_nx columns) -- see
             # note in _draw_land_profile above.
             sample = self._llnl_random_walk((left_nz,left_nz), (right_nz,right_nz), self.template.shelf_nx, self.template.nz)
