@@ -14,3 +14,5 @@ report/*.out
 report/*.synctex.gz
 report/*.pdf
 report/*.pptx
+report/scripts/
+report/figures/geofuse_figure.jpg

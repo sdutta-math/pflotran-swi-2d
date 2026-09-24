@@ -1,0 +1,16 @@
+% Standalone wrapper for local compilation/preview only.
+% section.tex is the actual deliverable, meant for \input into a larger report
+% and intentionally has no title page / abstract of its own.
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{natbib}
+
+\begin{document}
+\input{section.tex}
+\bibliographystyle{plainnat}
+\bibliography{references}
+\end{document}
