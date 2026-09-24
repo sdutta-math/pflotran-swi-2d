@@ -98,7 +98,7 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_di
     _write_pf_surfaces(region_names, regions, face_ids, outfilename = spinup_dir + "regions.h5")
 
     perm_names = ['perm_x', 'perm_z']
-    perm_data_flat = [model.perm_x.flatten(), model.perm_z.flatten()]
+    perm_data_flat = [model.perm_x.flatten(order='F'), model.perm_z.flatten(order='F')]
     mask_1d = model.subsurface_mask.flatten(order='F')
     masked_perm_data = np.where(mask_1d, perm_data_flat, 0)
     _write_pf_cell_indexed_dataset( cell_ids = model.cell_ids.flatten(order='F'),
@@ -107,7 +107,7 @@ def write_spinup_run(model: NorfolkModel, spinup_dir: str = "./spinup/", ctrl_di
                                     outfilename = spinup_dir + "perm.h5")
 
     poro_names = ['poro']
-    poro_data_flat = [model.poro.flatten()]
+    poro_data_flat = [model.poro.flatten(order='F')]
     masked_poro_data = np.where(mask_1d, poro_data_flat, 0)
     _write_pf_cell_indexed_dataset( cell_ids = model.cell_ids.flatten(order='F'),
                                     ds_names = poro_names,

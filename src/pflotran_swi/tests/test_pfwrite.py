@@ -78,3 +78,36 @@ def test_write_records_params_json(tmp_path):
     assert len(params["land_profile_m"]) == model.land_nx
     assert params["sampling_seeds"]["field"] == model.sampling_seeds["field"]
     assert params["log10_perm_x_mean"] == pytest.approx(np.log10(model.perm_x[np.squeeze(model.subsurface_mask)]).mean())
+
+
+def _read_back(path, model, name):
+    """Map a cell-indexed HDF5 dataset back onto the (nx, nz) grid via Cell Ids (id = ix + iz*nx)."""
+    with h5py.File(path, "r") as hf:
+        cell_ids = hf["Cell Ids"][:]
+        grid = np.zeros((model.nx, model.nz))
+        grid[cell_ids % model.nx, cell_ids // model.nx] = hf[name][:]
+    return grid
+
+
+def test_perm_poro_roundtrip_grid_order(tmp_path):
+    """perm/poro written to HDF5 must map back onto the (nx, nz) grid unscrambled."""
+    model = NorfolkModel()
+    ix, iz = np.meshgrid(np.arange(model.nx), np.arange(model.nz), indexing="ij")
+    model.field = (ix + model.nx * iz) / (model.nx * model.nz)   # unique per cell: any x/z mixup is detected
+    pfw.write(model, dir=str(tmp_path))
+    mask = np.squeeze(model.subsurface_mask)
+    for filename, name in (("perm.h5", "perm_x"), ("perm.h5", "perm_z"), ("poro.h5", "poro")):
+        grid = _read_back(tmp_path / "spinup" / filename, model, name)
+        np.testing.assert_allclose(grid[mask], getattr(model, name)[mask], err_msg=f"{name} scrambled in {filename}")
+
+
+def test_perm_roundtrip_z_only_field(tmp_path):
+    """A field varying only in z must stay constant along x after write and read-back."""
+    model = NorfolkModel()
+    model.field = np.tile(np.linspace(0, 1, model.nz), (model.nx, 1))
+    pfw.write(model, dir=str(tmp_path))
+    mask = np.squeeze(model.subsurface_mask)
+    grid = _read_back(tmp_path / "spinup" / "perm.h5", model, "perm_x")
+    for k in range(model.nz):
+        col = grid[mask[:, k], k]
+        assert np.all(col == model.perm_x[0, k])
