@@ -65,3 +65,16 @@ def test_post_restart_link_matches_input(tmp_path):
     assert os.path.islink(link), f"{restart_name} not linked in postrun"
     # dangling until the spinup has actually run; must still point inside this ensemble member's spinup dir
     assert os.readlink(link) == str((tmp_path / "spinup" / "pflotran-restart.h5").resolve())
+
+
+def test_write_records_params_json(tmp_path):
+    import json
+    from pflotran_swi.norfolk_ensemble import NorfolkEnsemble
+    model = NorfolkEnsemble(NorfolkModel=NorfolkModel(), seed=5).draw(1)[0]
+    pfw.write(model, dir=str(tmp_path))
+    params = json.loads((tmp_path / "params.json").read_text())
+    assert params["recharge_m_per_year"] == pytest.approx(model.recharge.to("meter/year").magnitude)
+    assert len(params["annual_salinity_g_per_kg"]) == 12
+    assert len(params["land_profile_m"]) == model.land_nx
+    assert params["sampling_seeds"]["field"] == model.sampling_seeds["field"]
+    assert params["log10_perm_x_mean"] == pytest.approx(np.log10(model.perm_x[np.squeeze(model.subsurface_mask)]).mean())

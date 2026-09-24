@@ -4,6 +4,7 @@ import scipy.stats as stats
 import numpy as np
 import datetime as date 
 import copy 
+import pandas as pd
 from pflotran_swi.units import ureg
 
 from pflotran_swi.norfolk_model import NorfolkModel
@@ -14,6 +15,29 @@ class NorfolkModelList(list):
     def __init__(self, *args, name=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = name
+
+    def parameter_table(self) -> pd.DataFrame:
+        """One row per realization: scalar parameters, monthly arrays expanded to *_01..*_12, profile means, seeds.
+
+        Full land/shelf profiles are left out (see NorfolkModel.parameters / params.json).
+        """
+        rows = []
+        for model in self:
+            row = {}
+            for key, value in model.parameters().items():
+                if key.endswith("_profile_m"):
+                    continue
+                if isinstance(value, list):
+                    row.update({f"{key}_{i + 1:02d}": v for i, v in enumerate(value)})
+                elif isinstance(value, dict):
+                    row.update({f"seed_{k}": v for k, v in value.items()})
+                else:
+                    row[key] = value
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def to_csv(self, path):
+        self.parameter_table().to_csv(path, index=False)
 
 class NorfolkEnsemble:
 
@@ -37,6 +61,9 @@ class NorfolkEnsemble:
         # draw call shifts every seed drawn after it, changing the resulting realizations
         # even with the same seed value.
         self.master_rng =       MasterRNG(kwargs.get('seed', 20201007))
+        # Seeds handed out while drawing the current realization, keyed by what they seed.
+        # Recorded onto the model (see _draw) without changing the master_rng draw order.
+        self._seeds = {}
     
         self.water_table_gain_from_msl_dist =   kwargs.get("water_table_gain_from_msl_dist", stats.uniform(loc=0.5, scale=2.0))
         self.recharge_dist =                    kwargs.get("recharge_dist", stats.uniform(loc=1e-9, scale= 5e-8 - 1e-9))
@@ -52,7 +79,12 @@ class NorfolkEnsemble:
         self.ocean_profile_dist =               kwargs.get("ocean_profile_sde", "LLNL")
 
 
-    def _llnl_random_walk(self, left_elv_range: tuple, right_elv_range: tuple, nx, nz, dhz = 50) -> int:
+    def _seed(self, label):
+        """Next seed from master_rng, remembered under `label` for the realization being drawn."""
+        self._seeds[label] = self.master_rng()
+        return self._seeds[label]
+
+    def _llnl_random_walk(self, left_elv_range: tuple, right_elv_range: tuple, nx, nz, dhz = 50, label = "random_walk") -> int:
         """
         This is the way LLNL sampled their random walk.
         They sample elevations in cells, so to keep it consistent, it is converted back into physical units
@@ -74,7 +106,7 @@ class NorfolkEnsemble:
 
         # Local RNG seeded from master_rng() instead of the numpy global RNG, so this walk
         # is reproducible from the ensemble's seed alone.
-        rs = np.random.RandomState(self.master_rng())
+        rs = np.random.RandomState(self._seed(label))
 
         if left_elv_range[0] == left_elv_range[1]:
             nzs[0] = left_elv_range[0]
@@ -135,7 +167,7 @@ class NorfolkEnsemble:
         srf.set_pos([idxs, idzs], "structured")
         date_time = date.datetime.now()
         seed = date_time.microsecond
-        return srf(seed=self.master_rng())
+        return srf(seed=self._seed("field"))
     
     def _draw_land_profile(self):
         if self.land_profile_dist == "LLNL":
@@ -144,7 +176,7 @@ class NorfolkEnsemble:
             # Walk spans the land region only (land_nx columns), not the
             # full domain width -- NorfolkModel.land_profile requires
             # len(value) == land_nx (see __setattr__).
-            sample = self._llnl_random_walk((left_nz, left_nz), (right_nz, right_nz), self.template.land_nx, self.template.nz)
+            sample = self._llnl_random_walk((left_nz, left_nz), (right_nz, right_nz), self.template.land_nx, self.template.nz, label="land_profile")
             smoothed = self._llnl_smooth_profile(sample)
             return self.template.nz_to_elevation(smoothed)
 
@@ -154,24 +186,25 @@ class NorfolkEnsemble:
             right_nz = self.template.shelf_break_nz
             # Walk spans the shelf region only (shelf_nx columns) -- see
             # note in _draw_land_profile above.
-            sample = self._llnl_random_walk((left_nz,left_nz), (right_nz,right_nz), self.template.shelf_nx, self.template.nz)
+            sample = self._llnl_random_walk((left_nz,left_nz), (right_nz,right_nz), self.template.shelf_nx, self.template.nz, label="shelf_profile")
             smoothed = self._llnl_smooth_profile(sample)
             return self.template.nz_to_elevation(smoothed)
 
     def _draw_salinity_record(self):
-        return [self.salinity_dists[month].rvs(random_state=self.master_rng()) for month in range(12)] * ureg.gram/ureg.kg
+        return [self.salinity_dists[month].rvs(random_state=self._seed(f"salinity_{month + 1:02d}")) for month in range(12)] * ureg.gram/ureg.kg
 
     def _draw_air_pressure_at_msl(self):
-        return [self.air_pressure_at_msl_dist.rvs(random_state=self.master_rng()) for _ in range(12)] * ureg.pascal
+        return [self.air_pressure_at_msl_dist.rvs(random_state=self._seed(f"air_pressure_{month + 1:02d}")) for month in range(12)] * ureg.pascal
 
     def _draw_water_table_gain_from_msl(self):
-        return self.water_table_gain_from_msl_dist.rvs(random_state=self.master_rng())* ureg.meter
+        return self.water_table_gain_from_msl_dist.rvs(random_state=self._seed("dh_sea"))* ureg.meter
 
     def _draw_recharge(self):
-        return self.recharge_dist.rvs(random_state=self.master_rng()) *ureg.meter/ureg.year
+        return self.recharge_dist.rvs(random_state=self._seed("recharge")) *ureg.meter/ureg.year
 
     def _draw(self, name): 
         new_model = copy.copy(self.template)
+        self._seeds = {}
         
         new_model.model_name = name
         new_model.field = self._draw_subsurface_field()
@@ -185,6 +218,7 @@ class NorfolkEnsemble:
         new_model.annual_air_pressure_at_sea_level = self._draw_air_pressure_at_msl()
         new_model.dh_sea = self._draw_water_table_gain_from_msl()
         new_model.recharge = self._draw_recharge()
+        new_model.sampling_seeds = dict(self._seeds)
 
         return new_model
 

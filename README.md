@@ -36,7 +36,13 @@ plausible aquifer configurations.
 - Spinup period (steady mean sea level and salinity) followed by a
   post-spinup period with sea-level rise and annual salinity variation
 - Units enforced throughout via [`pint`](https://pint.readthedocs.io/)
-- Ensemble sampling for generating batches of randomized models
+- Ensemble sampling for generating batches of randomized models, seeded
+  from a single `MasterRNG` stream (reproducible given the seed *and* an
+  unchanged draw order)
+- Per-case parameter metadata: every written case gets a `params.json`
+  (sampled scalars, monthly salinity/air-pressure arrays, land/shelf
+  profiles, subsurface-field summary statistics, and the RNG seeds), and an
+  ensemble can be exported as one table with `samples.to_csv(...)`
 
 ## Installation
 
@@ -71,6 +77,20 @@ samples = ensemble.draw(3)
 for realization in samples:
     pfw.write(realization, f"./work/{realization.model_name}")
 ```
+
+Each written case directory contains `spinup/`, `postrun/`, and a
+`params.json` recording the parameters that realization was drawn with, so
+downstream consumers don't need to reconstruct them from the simulation
+files. To get one row per realization for the whole ensemble:
+
+```python
+samples.parameter_table()        # pandas DataFrame
+samples.to_csv("ensemble_params.csv")
+```
+
+Models built by hand (not via `NorfolkEnsemble`) also write `params.json`;
+their `sampling_seeds` entry is simply empty. Ensembles archived before this
+was added have no `params.json`.
 
 See `notebooks/sampling_training_data.ipynb` for a fuller walkthrough,
 including unit enforcement, model validation, and functional-style

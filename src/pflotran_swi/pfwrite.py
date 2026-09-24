@@ -8,6 +8,7 @@ from pflotran_swi.units import ureg
 import glob
 import warnings
 import shutil
+import json
 import importlib.resources
 
 def _magnitude(data):
@@ -293,7 +294,13 @@ def write_post_run(model: NorfolkModel, post_dir: str = "./postrun/", spinup_dir
 
     # Well stuff here
 
+def write_params(model: NorfolkModel, dir: str):
+    """Record the realization's parameters (NorfolkModel.parameters) as <dir>/params.json."""
+    with open(os.path.join(dir, "params.json"), "w") as f:
+        json.dump(model.parameters(), f, indent=2)
+
 def write(model: NorfolkModel, dir, spinup_ctrl_dir: str = None, post_ctrl_dir: str = None):
     write_spinup_run(model, spinup_dir = dir + "/spinup/", ctrl_dir = spinup_ctrl_dir)
     write_post_run(model, post_dir = dir + "/postrun/", spinup_dir = dir + "/spinup/", ctrl_dir = post_ctrl_dir)
+    write_params(model, dir)
 

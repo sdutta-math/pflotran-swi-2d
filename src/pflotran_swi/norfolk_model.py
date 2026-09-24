@@ -85,6 +85,10 @@ class NorfolkModel:
         self.field = kwargs.get("field", np.ones((self.nx, self.nz)))
         # endregion
 
+        # RNG seeds that produced this realization (empty for hand-built models); filled in by
+        # NorfolkEnsemble._draw so parameters() can record them.
+        self.sampling_seeds = kwargs.get("sampling_seeds", {})
+
 
     def __str__(self):
         return f"PFLOTRAN Model: {self.model_name}"
@@ -95,6 +99,40 @@ class NorfolkModel:
         elif name == "shelf_profile":
             assert len(value) == self.shelf_nx, "Shelf profile length must match shelf_nx"
         super().__setattr__(name, value)
+
+    def parameters(self) -> dict:
+        """JSON-serializable record of this realization's parameters (unit-stripped, units in key names).
+
+        Holds the sampled scalars/arrays, the full land and shelf profiles, summary statistics of the
+        subsurface fields (mean over subsurface_mask cells), and the RNG seeds if the model came from a
+        NorfolkEnsemble.
+        """
+        mask = np.squeeze(self.subsurface_mask)
+        perm_x = self.perm_x[mask]
+        poro = self.poro[mask]
+        poro = poro[poro > 0]
+        return {
+            "model_name": self.model_name,
+            "nx": int(self.nx),
+            "nz": int(self.nz),
+            "lx_m": float(self.lx.to(ureg.meter).magnitude),
+            "lz_m": float(self.lz.to(ureg.meter).magnitude),
+            "dh_sea_m": float(self.dh_sea.to(ureg.meter).magnitude),
+            "recharge_m_per_year": float(self.recharge.to(ureg.meter / ureg.year).magnitude),
+            "sea_level_anomaly_rate_m_per_year": float(self.sea_level_anomaly_rate.to(ureg.meter / ureg.year).magnitude),
+            "annual_salinity_g_per_kg": np.asarray(self.annual_salinity.to(ureg.gram / ureg.kilogram).magnitude).tolist(),
+            "annual_air_pressure_at_sea_level_Pa": np.asarray(self.annual_air_pressure_at_sea_level.to(ureg.pascal).magnitude).tolist(),
+            "perm_mean": float(self.perm_mean),
+            "perm_std": float(self.perm_std),
+            "poro_mean": float(self.poro_mean),
+            "poro_std": float(self.poro_std),
+            "log10_perm_x_mean": float(np.log10(perm_x).mean()) if perm_x.size else None,
+            "poro_field_mean": float(poro.mean()) if poro.size else None,
+            "land_profile_m": np.asarray(self.land_profile.to(ureg.meter).magnitude).tolist(),
+            "shelf_profile_m": np.asarray(self.shelf_profile.to(ureg.meter).magnitude).tolist(),
+            "surface_elevation_mean_m": float(np.mean(self.profile.to(ureg.meter).magnitude)),
+            "sampling_seeds": {k: int(v) for k, v in self.sampling_seeds.items()},
+        }
 
     # region Derived grid properties
     @property
