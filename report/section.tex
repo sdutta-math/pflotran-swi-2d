@@ -155,15 +155,7 @@ error accumulation and the occasional divergence of rollouts.
 \label{sec:findings}
 
 Here we present findings from a preliminary analysis conducted using a randomly drawn sample of 350 PFLOTRAN simulations from the generated 2000-member enesemble, where each realization is an independent, 25-year post-spin-up simulation produced by this pipeline. The results of the neural operator approximation are obtained using the current best model configuration for each state variable using either the SWINet or SWINetTensorT architecture. The surrogate model is evaluated on a held-out test split of 30 cases, and the reported metrics are averaged over these cases. The surrogate model's performance is assessed using normalized root mean square error (NRMSE) and anomaly correlation coefficient (ACC) metrics.
-% All quantities reported here were computed directly from the
-% raw per-case HDF5/text output rather than from any pre-aggregated summary,
-% since -- as documented in the SWINet repository's own
-% \texttt{ensemble\_params.csv} -- most sampled per-case parameters are not
-% stored anywhere as scalars and must be reconstructed from the simulation
-% output itself (e.g., the land/shelf elevation profile has to be recovered
-% from the topmost active-material cell per grid column, and the boundary
-% salinity forcing from the constraint-file text rather than any array on
-% disk).
+
 
 \subsubsection{Simulation ensemble characteristics}
 
